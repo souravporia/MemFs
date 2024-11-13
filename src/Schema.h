@@ -15,7 +15,5 @@ public:
 
 	Inode(const std::string& name = "") : fileName(name), size(0), createdAt(std::chrono::system_clock::now()), lastModified(createdAt) {}
 
-	void updateModifiedTime() {
-		lastModified = std::chrono::system_clock::now();
-	}
+	void updateModifiedTime();
 };

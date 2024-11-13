@@ -1,36 +1,25 @@
+#include <bitset>
+#include <atomic>
+#include <cstdint>
 #include <vector>
+#include <cstring>
+#include <stdexcept>
 
+#define _NUM_BLOCKS 8096 // DONT USE OUTSIDE CLASS
 
 class VirtualDisk {
 public:
-	std::vector<size_t> vdisk; // Disk blocks are 64B/32B
-	size_t totalBlocks; // Number of blocks
-	size_t diskSize; // In Bytes
-	size_t blockSize;
+	uint8_t *vdisk = nullptr;
+	uint32_t blockSize = 128; // 128B
+	uint32_t diskSize = _NUM_BLOCKS*blockSize;
+	uint32_t numBlocks = _NUM_BLOCKS;
+	std::atomic<uint64_t> block_versions[_NUM_BLOCKS];
 
-	VirtualDisk()
-	{
-		diskSize = 50 * 1024 * 1024; // 50MB
-		blockSize = sizeof(size_t); // Block size in bytes
-		totalBlocks = diskSize / blockSize;
-		vdisk.resize(totalBlocks, 0); // Initialize the disk with zeroes
-	}
+	VirtualDisk();
 
-	void readBlock(size_t blockIndex, std::vector<size_t>& buffer)
-	{
-		if (buffer.size() > 0) {
-			buffer[0] = vdisk[blockIndex];
-		}
-		else
-		{
-			buffer.push_back(vdisk[blockIndex]);
-		}
-	}
+	~VirtualDisk();
 
-	void writeBlock(size_t blockIndex, const std::vector<size_t>& buffer)
-	{
-		if (buffer.size() > 0) {
-			vdisk[blockIndex] = buffer.at(0);
-		}
-	}
+	void readBlock(size_t blockIndex, uint8_t* buffer); // Reads one block and stores into the index
+
+	void writeBlock(size_t blockIndex, const uint8_t* buffer); // Write one block adn store into buffer 
 };
