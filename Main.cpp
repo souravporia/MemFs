@@ -9,7 +9,6 @@ std::vector<std::string> split(const std::string& str) {
 	std::vector<std::string> tokens;
 	std::istringstream stream(str);
 	std::string token;
-	bool inQuotes = false;
 	std::string quotedToken;
 
 	while (stream >> std::quoted(token)) {
@@ -60,12 +59,31 @@ int main() {
 				continue;
 			}
 
-			int numFiles = parseNumericOption(tokens, 1);
-			size_t contentStartIndex = 2 + (numFiles > 1 ? 1 : 0);
-			std::string content = tokens[contentStartIndex];
+			// Handle the -n option to specify the number of files
+			int numFiles = 1; // Default is 1 file
+			size_t contentStartIndex = 1; // Start at the second token for filenames
 
-			for (int i = 1; i <= numFiles; ++i) {
-				std::string filename = tokens[i];
+			if (tokens[1] == "-n") {
+				// If the first token is -n, parse the number of files
+				if (tokens.size() < 4) { // We expect at least 4 tokens for -n <numFiles> <file1> <content>
+					std::cerr << "Invalid command: Missing number of files or content\n";
+					continue;
+				}
+				numFiles = parseNumericOption(tokens, 2); // Parse the number of files
+				contentStartIndex = 2 + (numFiles > 1 ? 1 : 0); // Adjust the index for content
+			}
+
+			// Ensure there's enough tokens to process
+			if (tokens.size() < contentStartIndex + 2 * numFiles) {
+				std::cerr << "Invalid command: Missing filename(s) or content\n";
+				continue;
+			}
+
+			// Write to the specified number of files
+			for (int i = 0; i < numFiles; ++i) {
+				std::string filename = tokens[contentStartIndex + 2 * i]; // Get the filename
+				std::string content = tokens[contentStartIndex + 2 * i + 1]; // Get the corresponding content
+
 				std::vector<char> char_vector(content.begin(), content.end());
 				memFS.writeFile(filename, char_vector);
 			}
@@ -84,12 +102,15 @@ int main() {
 			}
 			std::string filename = tokens[1];
 			std::vector<char> char_vector;
-			memFS.read(filename, char_vector);
+			memFS.readFile(filename, char_vector);
 			std::cout << std::string(char_vector.begin(), char_vector.end()) << std::endl;
 		}
 		else if (commandName == "ls") {
 			bool detailed = tokens.size() > 1 && tokens[1] == "-l";
 			memFS.listFiles(detailed ? 1 : 0);
+		}
+		else if (commandName == "exit") {
+			exit(0);
 		}
 		else {
 			std::cerr << "Invalid command: " << commandName << "\n";

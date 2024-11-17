@@ -1,8 +1,8 @@
 # Compiler
-CXX = g++-11
+CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -Wextra -std=c++20
+CXXFLAGS = -std=c++17
 
 # Target executables
 TARGETS = memfs benchmark
@@ -19,6 +19,9 @@ all: $(TARGETS)
 # Link object files to create memfs executable
 memfs: Main.o $(OBJS)
 	$(CXX) -o $@ Main.o $(OBJS)
+
+benchmark: BenchMark.o $(OBJS)
+	$(CXX) -o $@ BenchMark.o $(OBJS)
 
 # Compile .cpp files to .o files
 %.o: %.cpp

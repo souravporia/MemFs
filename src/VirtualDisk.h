@@ -5,7 +5,7 @@
 #include <cstring>
 #include <stdexcept>
 
-#define _NUM_BLOCKS 8096 // DONT USE OUTSIDE CLASS
+#define _NUM_BLOCKS 16192 // DONT USE OUTSIDE CLASS
 
 class VirtualDisk {
 public:

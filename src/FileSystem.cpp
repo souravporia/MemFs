@@ -1,7 +1,15 @@
 #include "FileSystem.h"
 
 FileSystem::FileSystem(VirtualDisk &vdisk)
-    : vdisk(vdisk), blockSize(vdisk.blockSize), totalBlocks(vdisk.numBlocks), diskSize(vdisk.diskSize) {}
+    : vdisk(vdisk), blockSize(vdisk.blockSize), totalBlocks(vdisk.numBlocks), diskSize(vdisk.diskSize) {
+        fileTable.reserve(totalBlocks);
+    }
+
+void FileSystem::mkfs()
+{
+    fileTable.clear();
+    bitmap.reset();
+}
 
 void FileSystem::createFile(const std::string& fileName) {
     if (fileTable.find(fileName) != fileTable.end()) {
@@ -9,17 +17,12 @@ void FileSystem::createFile(const std::string& fileName) {
         return;
     }
     
-    fileTable[fileName] = Inode(fileName);
+	fileTable.insert_or_assign(fileName, Inode(fileName));
     std::cout << "File " << fileName << " created successfully\n";
 }
 
 bool FileSystem::writeFile(const std::string& fileName, const std::vector<char>& data) {
 
-    // Check if the file is open
-    if (openFiles.find(fileName) != openFiles.end()) {
-        std::cerr << "Error: File " << fileName << " is currently open and cannot be written to.\n";
-        return false;
-    }
 
     auto it = fileTable.find(fileName);
     if (it == fileTable.end()) {
@@ -74,11 +77,7 @@ bool FileSystem::writeFile(const std::string& fileName, const std::vector<char>&
 
 bool FileSystem::deleteFile(const std::string& fileName) {
 
-    // Ensure file isn't open before deletion
-    if (openFiles.find(fileName) != openFiles.end()) {
-        std::cerr << "Error: File " << fileName << " is currently open and cannot be deleted.\n";
-        return false;
-    }
+    
 
     if (fileTable.erase(fileName)) {
         std::cout << "File " << fileName << " deleted successfully\n";
@@ -96,8 +95,6 @@ void FileSystem::readFile(const std::string& fileName, std::vector<char>& data) 
         return;
     }
 
-    // Mark file as open for reading
-    openFiles[fileName] = true;
 
     const Inode& inode = it->second;
     data.clear();
@@ -116,17 +113,31 @@ void FileSystem::readFile(const std::string& fileName, std::vector<char>& data) 
     }
 
     delete[] buffer;
-
-    // Remove from open files once read is complete
-    openFiles.erase(fileName);
     std::cout << "Successfully read from " << fileName << "\n";
 }
 
 void FileSystem::listFiles(bool detailed) {
+    if(detailed)
+    {
+        std::cout << "Size" << "\t" << "Created On" << "\t" 
+                      << "Modifies" << "\t" << "File Name" << std::endl;
+    }
     for (const auto& [name, inode] : fileTable) {
-        std::cout << name << "\n";
+
         if (detailed) {
-            std::cout << inode.size << "\t" << inode.fileName << std::endl;
+            // Convert chrono::time_point to time_t
+            auto createdTime = std::chrono::system_clock::to_time_t(inode.createdAt);
+            auto modifiedTime = std::chrono::system_clock::to_time_t(inode.lastModified);
+            
+            // Convert time_t to readable format using std::put_time
+            std::ostringstream createdStream, modifiedStream;
+            createdStream << std::put_time(std::localtime(&createdTime), "%Y-%m-%d");
+            modifiedStream << std::put_time(std::localtime(&modifiedTime), "%Y-%m-%d");
+
+            std::cout << inode.size << "\t" << createdStream.str() << "\t" 
+                      << modifiedStream.str() << "\t" << inode.fileName << std::endl;
+        }else{
+            std::cout << name << "\n";
         }
     }
 }

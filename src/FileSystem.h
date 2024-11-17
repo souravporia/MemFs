@@ -3,29 +3,34 @@
 #include "Schema.h"
 #include <bitset>
 #include <unordered_map>
+#include "../lib/parallel_hashmap/phmap.h"
 #include <vector>
 #include <iostream>
 #include <algorithm>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 #define MAX_NUM_FILES 16000
 
+using phmap::flat_hash_map;
 
 class FileSystem {
 private:
-	std::unordered_map<std::string, Inode> fileTable;
-	std::unordered_map<std::string, bool> openFiles;
-	std::bitset<MAX_NUM_FILES> bitmap;
-	std::mutex mtx;
+	VirtualDisk &vdisk;
+	size_t blockSize;
 	size_t totalBlocks; // Number of blocks
 	size_t diskSize; // In Bytes
-	size_t blockSize;
-	VirtualDisk &vdisk;
+	flat_hash_map<std::string, Inode> fileTable;
+	std::bitset<MAX_NUM_FILES> bitmap;
+	std::mutex mtx;
+	
 
 public:
 
 	FileSystem(VirtualDisk &vdisk);
+
+	void mkfs();
 	
 	void createFile(const std::string& fileName);
 
